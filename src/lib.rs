@@ -6,6 +6,7 @@ const PRODUCT_ID: u16 = 0x0008;
 const CTRL_ENDPOINT: u8 = 0x02;
 const INTERFACE: u8 = 0x00;
 
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
 #[repr(u8)]
 pub enum Color {
     Red   = 0x10,
@@ -13,6 +14,7 @@ pub enum Color {
     Green = 0x12,
 }
 
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
 #[repr(u8)]
 pub enum State {
     Off = 0x00,
