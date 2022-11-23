@@ -21,18 +21,13 @@ pub enum State {
     On  = 0x01,
 }
 
-pub type InitializedGlobalDevice = InitializedDevice<GlobalContext>;
-
-pub struct InitializedDevice<C: UsbContext> {
-    handle: DeviceHandle<C>,
+pub struct InitializedGlobalDevice {
+    handle: DeviceHandle<GlobalContext>,
     detached_kernel_driver: bool,
 }
-impl<C: UsbContext> InitializedDevice<C> {
-    pub fn find_devices() -> rusb::Result<Vec<Device<C>>>
-    where
-        C: Default,
-    {
-        Ok(C::default()
+impl InitializedGlobalDevice {
+    fn find_devices() -> rusb::Result<Vec<Device<GlobalContext>>> {
+        Ok(GlobalContext::default()
             .devices()?
             .iter()
             .filter(|device| {
@@ -45,14 +40,11 @@ impl<C: UsbContext> InitializedDevice<C> {
             .collect())
     }
 
-    pub fn create_with_any() -> rusb::Result<Self>
-    where
-        C: Default,
-    {
+    fn create_with_any() -> rusb::Result<Self> {
         Self::create(Self::find_devices()?.get(0).ok_or(rusb::Error::NotFound)?)
     }
 
-    pub fn create(device: &Device<C>) -> rusb::Result<Self> {
+    fn create(device: &Device<GlobalContext>) -> rusb::Result<Self> {
         let mut s = Self {
             handle: device.open()?,
             detached_kernel_driver: false,
@@ -65,8 +57,9 @@ impl<C: UsbContext> InitializedDevice<C> {
         Ok(s)
     }
 
-    pub fn set_light(&self, color: Color, state: State) -> rusb::Result<()> {
-        self.handle
+    pub fn set_light(color: Color, state: State) -> rusb::Result<()> {
+        Self::create_with_any()?
+            .handle
             .write_interrupt(
                 CTRL_ENDPOINT,
                 &[0x00, color as u8, state as u8],
@@ -75,7 +68,7 @@ impl<C: UsbContext> InitializedDevice<C> {
             .map(|_| {})
     }
 }
-impl<C: UsbContext> Drop for InitializedDevice<C> {
+impl Drop for InitializedGlobalDevice {
     fn drop(&mut self) {
         self.handle
             .release_interface(INTERFACE)
